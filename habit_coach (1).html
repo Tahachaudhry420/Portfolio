@@ -1,0 +1,367 @@
+<div id="app-root"></div>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap');
+
+  :root{
+    --bg: #142924;
+    --surface: #1c3a32;
+    --surface-2: #24463c;
+    --line: #2f5548;
+    --cream: #EDE6D2;
+    --cream-dim: #b9c2b8;
+    --gold: #D4A73D;
+    --gold-soft: #e9c874;
+    --rust: #b5563c;
+    --sage: #7A9B76;
+    --radius: 14px;
+  }
+  *{ box-sizing:border-box; }
+  #app-root{
+    font-family:'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--cream);
+    min-height: 100vh;
+    padding: 28px 20px 60px;
+  }
+  .wrap{ max-width: 880px; margin: 0 auto; }
+
+  .header{ margin-bottom: 28px; }
+  .eyebrow{
+    font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--gold-soft); margin-bottom: 6px; font-weight:600;
+  }
+  h1{
+    font-family:'Fraunces', serif; font-weight:600; font-size: 34px;
+    margin: 0 0 6px; color: var(--cream);
+  }
+  .sub{ color: var(--cream-dim); font-size: 14.5px; max-width: 520px; margin:0; }
+
+  .add-row{
+    display:flex; gap:10px; margin: 22px 0 26px;
+  }
+  .add-row input{
+    flex:1; background: var(--surface); border:1px solid var(--line);
+    color: var(--cream); padding: 12px 14px; border-radius: var(--radius);
+    font-size: 14.5px; font-family:'Inter',sans-serif;
+  }
+  .add-row input::placeholder{ color: #6f887f; }
+  .add-row input:focus{ outline:none; border-color: var(--gold); }
+  .btn{
+    background: var(--gold); color: #182f28; border:none; font-weight:700;
+    padding: 12px 20px; border-radius: var(--radius); cursor:pointer;
+    font-size: 14px; font-family:'Inter',sans-serif; transition: transform .12s ease, background .2s;
+    white-space:nowrap;
+  }
+  .btn:hover{ transform: translateY(-1px); background: var(--gold-soft); }
+  .btn:active{ transform: translateY(0); }
+  .btn.ghost{
+    background: transparent; color: var(--gold-soft); border:1px solid var(--line);
+  }
+  .btn.ghost:hover{ background: var(--surface-2); }
+  .btn.small{ padding:7px 12px; font-size:12.5px; }
+  .btn:disabled{ opacity:.6; cursor:default; transform:none; }
+
+  .grid{
+    display:grid; grid-template-columns: repeat(auto-fill, minmax(260px,1fr));
+    gap: 16px; margin-bottom: 30px;
+  }
+  .card{
+    background: var(--surface); border:1px solid var(--line); border-radius: var(--radius);
+    padding: 18px; display:flex; gap: 16px; align-items:center;
+  }
+  .ring-wrap{ position:relative; width:76px; height:76px; flex-shrink:0; }
+  .ring{ width:76px; height:76px; border-radius:50%; }
+  .ring-center{
+    position:absolute; top:8px; left:8px; width:60px; height:60px; border-radius:50%;
+    background: var(--surface); display:flex; align-items:center; justify-content:center;
+    flex-direction:column;
+  }
+  .streak-num{ font-family:'Fraunces', serif; font-weight:700; font-size:20px; color: var(--gold-soft); line-height:1; }
+  .streak-label{ font-size:8.5px; text-transform:uppercase; letter-spacing:.06em; color: var(--cream-dim); margin-top:2px; }
+
+  .card-body{ flex:1; min-width:0; }
+  .habit-name{ font-size:16px; font-weight:600; margin-bottom:2px; word-break: break-word; }
+  .habit-meta{ font-size:12px; color: var(--cream-dim); margin-bottom:10px; }
+  .card-actions{ display:flex; gap:8px; flex-wrap:wrap; }
+  .toggle-today{
+    padding:7px 12px; border-radius:20px; border:1px solid var(--line);
+    background: var(--surface-2); color: var(--cream-dim); font-size:12.5px; cursor:pointer;
+    font-weight:600; transition: all .15s ease; font-family:'Inter',sans-serif;
+  }
+  .toggle-today.done{ background: var(--gold); color:#182f28; border-color: var(--gold); }
+  .icon-btn{
+    background:none; border:none; color: var(--cream-dim); cursor:pointer; font-size:13px;
+    padding: 6px 8px; font-family:'Inter',sans-serif;
+  }
+  .icon-btn:hover{ color: var(--rust); }
+
+  .empty{
+    text-align:center; padding: 50px 20px; color: var(--cream-dim);
+    border: 1px dashed var(--line); border-radius: var(--radius); font-size:14px;
+  }
+
+  .advisor{
+    background: var(--surface); border:1px solid var(--line); border-radius: var(--radius);
+    padding: 20px 22px;
+  }
+  .advisor-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; gap:10px; flex-wrap:wrap; }
+  .advisor-title{ font-family:'Fraunces', serif; font-size:18px; font-weight:600; }
+  .advisor-body{
+    font-size: 14px; line-height: 1.65; color: var(--cream);
+    white-space: pre-wrap;
+  }
+  .advisor-body.placeholder{ color: var(--cream-dim); font-style: italic; }
+  .advisor-error{ color: var(--rust); font-size:13px; margin-bottom:8px; }
+
+  @media (max-width:480px){
+    h1{ font-size: 27px; }
+    .add-row{ flex-direction:column; }
+  }
+</style>
+
+<script>
+(function(){
+  const STORAGE_KEY = 'habits-v1';
+  const GOLD = '#D4A73D';
+  const EMPTY = '#2a4a40';
+
+  let habits = [];
+  let loaded = false;
+  let advice = '';
+  let loadingAdvice = false;
+  let adviceError = '';
+
+  function todayStr(offset){
+    offset = offset || 0;
+    const d = new Date();
+    d.setDate(d.getDate() - offset);
+    return d.toISOString().slice(0,10);
+  }
+
+  function last7(){
+    const arr = [];
+    for(let i=6;i>=0;i--) arr.push(todayStr(i));
+    return arr;
+  }
+
+  function computeStreak(checkins){
+    let streak = 0;
+    let i = 0;
+    while(true){
+      const day = todayStr(i);
+      if(checkins[day]){ streak++; i++; }
+      else{
+        if(i===0){ i++; continue; }
+        break;
+      }
+      if(i>3650) break;
+    }
+    return streak;
+  }
+
+  async function loadHabits(){
+    try{
+      const res = await window.storage.get(STORAGE_KEY, false);
+      habits = (res && res.value) ? JSON.parse(res.value) : [];
+    }catch(e){
+      habits = [];
+    }
+    loaded = true;
+    render();
+  }
+
+  async function persist(){
+    try{
+      await window.storage.set(STORAGE_KEY, JSON.stringify(habits), false);
+    }catch(e){
+      console.error('save failed', e);
+    }
+  }
+
+  function addHabit(name){
+    name = (name||'').trim();
+    if(!name) return;
+    habits.push({ id: 'h_' + Date.now(), name: name, checkins: {}, createdAt: todayStr() });
+    persist();
+    render();
+  }
+
+  function deleteHabit(id){
+    habits = habits.filter(h=>h.id!==id);
+    persist();
+    render();
+  }
+
+  function toggleToday(id){
+    const day = todayStr();
+    habits = habits.map(h=>{
+      if(h.id!==id) return h;
+      const checkins = Object.assign({}, h.checkins);
+      if(checkins[day]) delete checkins[day];
+      else checkins[day] = true;
+      return Object.assign({}, h, { checkins: checkins });
+    });
+    persist();
+    render();
+  }
+
+  function ringGradient(checkins){
+    const days = last7();
+    const sliceDeg = 360/7;
+    const gapDeg = 4;
+    const parts = [];
+    let cursor = 0;
+    days.forEach(day=>{
+      const color = checkins[day] ? GOLD : EMPTY;
+      const start = cursor;
+      const end = cursor + sliceDeg - gapDeg;
+      parts.push(color + ' ' + start + 'deg ' + end + 'deg');
+      parts.push('transparent ' + end + 'deg ' + (cursor+sliceDeg) + 'deg');
+      cursor += sliceDeg;
+    });
+    return 'conic-gradient(' + parts.join(', ') + ')';
+  }
+
+  function esc(s){
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  async function getAdvice(){
+    if(habits.length===0){
+      adviceError = 'Pehle koi habit add karein, phir mashware lein.';
+      render();
+      return;
+    }
+    adviceError = '';
+    loadingAdvice = true;
+    advice = '';
+    render();
+    try{
+      const summary = habits.map(h=>{
+        const streak = computeStreak(h.checkins);
+        const days = last7();
+        const doneCount = days.filter(d=>h.checkins[d]).length;
+        return '- ' + h.name + ': current streak ' + streak + ' din, pichle 7 din mein ' + doneCount + '/7 din complete';
+      }).join('\n');
+
+      const prompt = 'Aap ek dosaana, samajhdaar habit coach hain. Neeche user ki habits ka data hai:\n\n' +
+        summary +
+        '\n\nIss data ko dekh kar Roman Urdu (Hinglish nahi, khaalis Roman Urdu) mein, garmjoshi bhare lekin seedhe andaaz mein, chhota sa (120 se 160 lafzon ka) mashware dein. Jo habits kamzor hain unke liye ek chhota practical tip dein, aur jo strong hain unki tareef karein. Koi headings ya bullet points na lagayein, sirf rawan paragraph likhein.';
+
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-6",
+          max_tokens: 1000,
+          messages: [{ role: "user", content: prompt }]
+        })
+      });
+      const data = await response.json();
+      const text = (data.content || [])
+        .filter(b=>b.type==='text')
+        .map(b=>b.text)
+        .join('\n')
+        .trim();
+      advice = text || 'Mashware abhi nahi mil saka, dobara koshish karein.';
+    }catch(e){
+      adviceError = 'Mashware laane mein masla hua. Dobara koshish karein.';
+    }finally{
+      loadingAdvice = false;
+      render();
+    }
+  }
+
+  function render(){
+    const root = document.getElementById('app-root');
+    if(!loaded){
+      root.innerHTML = '<div class="wrap"><p style="color:var(--cream-dim)">Load ho raha hai...</p></div>';
+      return;
+    }
+
+    let cardsHtml = '';
+    if(habits.length===0){
+      cardsHtml = '<div class="empty">Abhi koi habit nahi hai. Upar se ek add karke shuru karein.</div>';
+    }else{
+      cardsHtml = '<div class="grid">' + habits.map(h=>{
+        const streak = computeStreak(h.checkins);
+        const isDoneToday = !!h.checkins[todayStr()];
+        const gradient = ringGradient(h.checkins);
+        return (
+          '<div class="card">' +
+            '<div class="ring-wrap">' +
+              '<div class="ring" style="background:' + gradient + '"></div>' +
+              '<div class="ring-center">' +
+                '<div class="streak-num">' + streak + '</div>' +
+                '<div class="streak-label">Din Streak</div>' +
+              '</div>' +
+            '</div>' +
+            '<div class="card-body">' +
+              '<div class="habit-name">' + esc(h.name) + '</div>' +
+              '<div class="habit-meta">Pichle 7 din ka progress upar dekhein</div>' +
+              '<div class="card-actions">' +
+                '<button class="toggle-today' + (isDoneToday ? ' done' : '') + '" data-toggle="' + h.id + '">' +
+                  (isDoneToday ? 'Aaj Ho Gaya &#10003;' : 'Aaj Mark Karein') +
+                '</button>' +
+                '<button class="icon-btn" data-delete="' + h.id + '">Hatayein</button>' +
+              '</div>' +
+            '</div>' +
+          '</div>'
+        );
+      }).join('') + '</div>';
+    }
+
+    let advisorBodyHtml;
+    if(loadingAdvice){
+      advisorBodyHtml = '<div class="advisor-body">Aapki habits ka jaiza le raha hoon&hellip;</div>';
+    }else if(advice){
+      advisorBodyHtml = '<div class="advisor-body">' + esc(advice) + '</div>';
+    }else{
+      advisorBodyHtml = '<div class="advisor-body placeholder">Yahan aapko apni habits ke mutabiq personalized mashware milega. Button dabayein.</div>';
+    }
+
+    root.innerHTML =
+      '<div class="wrap">' +
+        '<div class="header">' +
+          '<div class="eyebrow">Roz ki kaasht</div>' +
+          '<h1>Habit Coach</h1>' +
+          '<p class="sub">Har din ek check-in, har hafta ek growth ring. Neeche mashware bhi mil jayega, aapki apni progress dekh kar.</p>' +
+        '</div>' +
+        '<div class="add-row">' +
+          '<input type="text" id="new-habit-input" placeholder="Nayi habit ka naam likhein... jaise \'Subah walk\'" />' +
+          '<button class="btn" id="add-habit-btn">Add Karein</button>' +
+        '</div>' +
+        cardsHtml +
+        '<div class="advisor">' +
+          '<div class="advisor-head">' +
+            '<div class="advisor-title">AI Mashware</div>' +
+            '<button class="btn ghost small" id="get-advice-btn" ' + (loadingAdvice ? 'disabled' : '') + '>' +
+              (loadingAdvice ? 'Soch raha hai...' : 'Mashware Lein') +
+            '</button>' +
+          '</div>' +
+          (adviceError ? '<div class="advisor-error">' + esc(adviceError) + '</div>' : '') +
+          advisorBodyHtml +
+        '</div>' +
+      '</div>';
+
+    const input = document.getElementById('new-habit-input');
+    document.getElementById('add-habit-btn').addEventListener('click', function(){
+      addHabit(input.value);
+    });
+    input.addEventListener('keydown', function(e){
+      if(e.key === 'Enter') addHabit(input.value);
+    });
+    document.getElementById('get-advice-btn').addEventListener('click', getAdvice);
+    root.querySelectorAll('[data-toggle]').forEach(function(btn){
+      btn.addEventListener('click', function(){ toggleToday(btn.getAttribute('data-toggle')); });
+    });
+    root.querySelectorAll('[data-delete]').forEach(function(btn){
+      btn.addEventListener('click', function(){ deleteHabit(btn.getAttribute('data-delete')); });
+    });
+  }
+
+  loadHabits();
+})();
+</script>
